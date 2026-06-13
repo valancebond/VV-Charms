@@ -1,2 +1,2 @@
 # VV-Charms
-A page for the VV Ultimatum charm synergies that I've tested.
+GO TO THE PAGES SITE PLEASE!!!! (Thank you!)
