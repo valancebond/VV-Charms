@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Synergy Table</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f5f6f8;
+    }
+
+    h2 {
+      margin-bottom: 12px;
+    }
+
+    .sheet {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 1100px;
+      background: white;
+      border: 1px solid #ddd;
+    }
+
+    .sheet th {
+      position: sticky;
+      top: 0;
+      background: #e9ecef;
+      text-align: left;
+      padding: 10px;
+      border: 1px solid #ddd;
+    }
+
+    .sheet td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      height: 42px;
+      vertical-align: middle;
+    }
+
+    .sheet tr:hover td {
+      background: #f1f7ff;
+    }
+
+    .sheet td:first-child,
+    .sheet th:first-child {
+      min-width: 240px;
+    }
+
+    .sheet td:nth-child(4),
+    .sheet th:nth-child(4) {
+      min-width: 260px;
+    }
+
+    /* dropdown */
+    .dropdown {
+      position: relative;
+      width: 100%;
+    }
+
+    .dropdown-input {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 14px;
+      border: none;
+      outline: none;
+      background: transparent;
+    }
+
+    .dropdown-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd;
+      z-index: 100;
+      display: none;
+    }
+
+    .dropdown-item {
+      padding: 6px;
+      cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+      background: #f1f7ff;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Synergy Table</h2>
+
+<table class="sheet">
+  <thead>
+    <tr>
+      <th>Charms</th>
+      <th>Effects</th>
+      <th>Tier</th>
+      <th>Effectiveness</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>
+        <div class="dropdown">
+          <input id="c1" class="dropdown-input" placeholder="Search charm..." autocomplete="off">
+          <div id="c1-list" class="dropdown-list"></div>
+        </div>
+      </td>
+      <td id="b1"></td>
+      <td id="d1"></td>
+      <td id="e1"></td>
+    </tr>
+
+    <tr>
+      <td>
+        <div class="dropdown">
+          <input id="c2" class="dropdown-input" placeholder="Search charm..." autocomplete="off">
+          <div id="c2-list" class="dropdown-list"></div>
+        </div>
+      </td>
+      <td id="b2"></td>
+      <td id="d2"></td>
+      <td id="e2"></td>
+    </tr>
+
+    <tr>
+      <td>
+        <div class="dropdown">
+          <input id="c3" class="dropdown-input" placeholder="Search charm..." autocomplete="off">
+          <div id="c3-list" class="dropdown-list"></div>
+        </div>
+      </td>
+      <td id="b3"></td>
+      <td id="d3"></td>
+      <td id="e3"></td>
+    </tr>
+  </tbody>
+</table>
+
+<script>
+
+const API =
+  "https://script.google.com/macros/s/AKfycbzrl6Hnsqy3yRQPOHbU66PFxEGxb65Y7o7Z2Zg7xLbCySCJzPVFRr5-1RffbMcQtsNL/exec";
+
+let charmList = [];
+
+/* fill row from API */
+function fillRow(charm, row) {
+  fetch(`${API}?action=charmData&charm=${encodeURIComponent(charm)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data) return;
+
+      document.getElementById("b" + row).textContent = data.charms;
+      document.getElementById("d" + row).textContent = data.tier;
+      document.getElementById("e" + row).textContent = data.effectiveness;
+    });
+}
+
+/* smart search (multi-word AND) */
+function matchesCharm(charm, query) {
+  const tokens = query.toLowerCase().trim().split(/\s+/);
+  return tokens.every(t => charm.toLowerCase().includes(t));
+}
+
+/* dropdown system */
+function setupDropdown(inputId, listId, row) {
+  const input = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+
+  function render(filter) {
+    list.innerHTML = "";
+
+    const filtered = charmList.filter(c =>
+      matchesCharm(c, filter)
+    );
+
+    filtered.forEach(charm => {
+      const div = document.createElement("div");
+      div.className = "dropdown-item";
+      div.textContent = charm;
+
+      div.onclick = () => {
+        input.value = charm;
+        list.style.display = "none";
+        fillRow(charm, row);
+      };
+
+      list.appendChild(div);
+    });
+
+    list.style.display = filtered.length ? "block" : "none";
+  }
+
+  input.addEventListener("input", () => render(input.value));
+  input.addEventListener("focus", () => render(input.value));
+
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".dropdown")) {
+      list.style.display = "none";
+    }
+  });
+}
+
+/* INIT */
+fetch(`${API}?action=charms`)
+  .then(r => r.json())
+  .then(data => {
+    charmList = data;
+
+    setupDropdown("c1", "c1-list", 1);
+    setupDropdown("c2", "c2-list", 2);
+    setupDropdown("c3", "c3-list", 3);
+  });
+
+</script>
+
+</body>
+</html>
